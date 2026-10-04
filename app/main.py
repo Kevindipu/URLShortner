@@ -1,8 +1,7 @@
 import logging
 import os
-import sqlite3
-from contextlib import closing
 
+import psycopg
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
@@ -15,7 +14,7 @@ from pydantic import BaseModel, HttpUrl
 
 load_dotenv()
 
-DB_PATH = os.getenv("DB_PATH")
+DATABASE_URL = os.getenv("DATABASE_URL")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_FILE = os.getenv("LOG_FILE")
 BASE_URL = os.getenv("BASE_URL")
@@ -24,7 +23,7 @@ ALPHABET = os.getenv("SHORT_CODE_ALPHABET")
 
 def validate_config():
     required = {
-        "DB_PATH": DB_PATH,
+        "DATABASE_URL": DATABASE_URL,
         "LOG_FILE": LOG_FILE,
         "BASE_URL": BASE_URL,
         "SHORT_CODE_ALPHABET": ALPHABET,
@@ -69,7 +68,7 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="URL Shortener",
-    version="1.0.0",
+    version="2.0.0",
 )
 
 
@@ -79,34 +78,25 @@ app = FastAPI(
 
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    return psycopg.connect(DATABASE_URL,connect_timeout=5)
 
 
 def init_db():
-    directory = os.path.dirname(DB_PATH)
-
-    if directory:
-        os.makedirs(directory, exist_ok=True)
-
-    with closing(get_db()) as conn:
+    with get_db() as conn:
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS urls (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 long_url TEXT NOT NULL,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             """
         )
 
-        conn.commit()
-
     logger.info("Database initialized")
 
 
-init_db()
+# init_db()
 
 
 # --------------------------------------------------
@@ -177,21 +167,21 @@ def shorten_url(request: ShortenRequest):
     logger.info("Creating short URL")
 
     try:
-        with closing(get_db()) as conn:
+        with get_db() as conn:
             cursor = conn.execute(
                 """
                 INSERT INTO urls (long_url)
-                VALUES (?)
+                VALUES (%s)
+                RETURNING id
                 """,
                 (long_url,),
             )
 
-            conn.commit()
+            url_id = cursor.fetchone()[0]
 
-            url_id = cursor.lastrowid
-
-    except sqlite3.Error:
+    except psycopg.Error:
         logger.exception("Failed to store URL")
+
         raise HTTPException(
             status_code=500,
             detail="Failed to create short URL",
@@ -212,17 +202,34 @@ def shorten_url(request: ShortenRequest):
     }
 
 
-@app.get("/health")
-def health_check():
+@app.get("/live")
+def liveness_check():
+    """
+    Liveness check.
+
+    Confirms that the FastAPI application is running.
+    Does not check external dependencies.
+    """
+
+    return {"status": "ok"}
+
+
+@app.get("/ready")
+def readiness_check():
+    """
+    Readiness check.
+
+    Confirms that the application can reach PostgreSQL.
+    """
 
     try:
-        with closing(get_db()) as conn:
+        with get_db() as conn:
             conn.execute("SELECT 1")
 
-        return {"status": "ok"}
+        return {"status": "ready"}
 
-    except sqlite3.Error:
-        logger.exception("Health check failed")
+    except psycopg.Error:
+        logger.exception("Readiness check failed")
 
         raise HTTPException(
             status_code=503,
@@ -253,17 +260,17 @@ def redirect_to_url(code: str):
         )
 
     try:
-        with closing(get_db()) as conn:
+        with get_db() as conn:
             row = conn.execute(
                 """
                 SELECT long_url
                 FROM urls
-                WHERE id = ?
+                WHERE id = %s
                 """,
                 (url_id,),
             ).fetchone()
 
-    except sqlite3.Error:
+    except psycopg.Error:
         logger.exception("Database lookup failed")
 
         raise HTTPException(
@@ -288,6 +295,6 @@ def redirect_to_url(code: str):
     )
 
     return RedirectResponse(
-        url=row["long_url"],
+        url=row[0],
         status_code=302,
     )
