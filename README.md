@@ -1,4 +1,4 @@
-# URL Shortener — V1
+# URL Shortener - V1
 
 A simple URL shortener built with **FastAPI, SQLite, and Docker**.
 
@@ -77,5 +77,92 @@ V1 is designed for a **single application instance**.
 * No monitoring or CI/CD
 
 These limitations will drive the architecture of **V2**, where the focus will be reliability and running multiple application instances.
+
+# URL Shortener - V2
+
+A FastAPI-based URL shortener built to learn and progressively apply Docker, PostgreSQL, AWS, networking and load balancing.
+
+## V1 → V2
+
+### V1 — Basic Application
+
+```text
+FastAPI → SQLite
+```
+
+* FastAPI application
+* SQLite database
+* Dockerized locally
+* Single application instance
+
+### V2 — AWS Deployment
+
+```text
+                    Internet
+                       |
+                       v
+                     ALB
+                   /     \
+                  v       v
+               EC2 #1  EC2 #2
+                  \       /
+                   \     /
+                    v   v
+                  RDS PostgreSQL
+```
+
+V2 replaces the single-instance/local setup with a distributed AWS architecture.
+
+### What changed?
+
+| V1                | V2                          |
+| ----------------- | --------------------------- |
+| SQLite            | PostgreSQL on RDS           |
+| Single instance   | Two EC2 instances           |
+| Direct access     | Application Load Balancer   |
+| Local database    | Shared database             |
+| No failover       | Health-check based failover |
+| Local environment | AWS VPC                     |
+
+## V2 Features
+
+* FastAPI + Docker
+* PostgreSQL on Amazon RDS
+* Two EC2 application instances
+* Application Load Balancer
+* ALB health checks using `/live`
+* `/ready` endpoint for database connectivity
+* Private subnets for RDS
+* Security groups controlling ALB → EC2 → RDS traffic
+* Failure recovery when one application instance becomes unavailable
+
+## Example
+
+Create a short URL:
+
+```bash
+curl -X POST http://<ALB-DNS>/shorten \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://www.google.com"}'
+```
+
+Response:
+
+```json
+{
+  "short_url": "http://<ALB-DNS>/8",
+  "code": "8"
+}
+```
+
+The generated URL redirects to the original URL through the ALB.
+
+## Future Improvements
+
+* HTTPS + custom domain
+* Terraform
+* CI/CD with GitHub Actions
+* Auto Scaling
+* CloudWatch monitoring
 
 
