@@ -96,7 +96,7 @@ def init_db():
     logger.info("Database initialized")
 
 
-# init_db()
+init_db()
 
 
 # --------------------------------------------------
