@@ -1,21 +1,19 @@
 # URL Shortener
 
-A containerized URL shortener built with **FastAPI** and progressively deployed from a local application to an AWS-based architecture with **Terraform, CI/CD, and monitoring**.
+A URL shortener built with **FastAPI and Docker**, progressively deployed from a local application to an AWS-based architecture with **Terraform, CI/CD, and monitoring**.
 
-The project was developed incrementally to demonstrate the evolution from a simple application to a distributed and automated cloud deployment.
+![Python](https://img.shields.io/badge/Python-3776AB?logo=python\&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi\&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker\&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-FF9900?logo=amazonaws\&logoColor=white)
+![Terraform](https://img.shields.io/badge/Terraform-7B42BC?logo=terraform\&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?logo=githubactions\&logoColor=white)
 
-## Architecture Evolution
+---
+
+## Architecture
 
 ```text
-V1
-FastAPI → SQLite → Docker
-```
-
-A simple, containerized URL shortener with local persistence, configuration, logging, and automated tests.
-
-```text
-V2
-
                          Internet
                             |
                             v
@@ -26,128 +24,130 @@ V2
                         \       /
                          \     /
                           v   v
-                       RDS PostgreSQL
+                     RDS PostgreSQL
+
+        GitHub → GitHub Actions → ECR → EC2
+
+              EC2 / ALB / RDS
+                       |
+                   CloudWatch
+                       |
+                      SNS
 ```
 
-The application was moved to AWS with multiple application instances, an Application Load Balancer, and a shared PostgreSQL database.
+Terraform manages the AWS infrastructure, while GitHub Actions builds and deploys the Docker image through Amazon ECR.
 
-```text
-V3
+---
 
-                         GitHub
-                            |
-                            v
-                     GitHub Actions
-                            |
-                     Build + Test
-                            |
-                            v
-                           ECR
-                         /     \
-                        v       v
-                     EC2 #1   EC2 #2
-                        \       /
-                         \     /
-                          v   v
-                       RDS PostgreSQL
+## Project Evolution
 
-                    CloudWatch + SNS
-                         Monitoring
-```
-
-V3 adds Infrastructure as Code, container image management, automated deployment, centralized monitoring, and alerting.
-
-## Project Versions
-
-| Version | Focus                              | Technologies                                         |
-| ------- | ---------------------------------- | ---------------------------------------------------- |
-| **V1**  | Application & containerization     | FastAPI, SQLite, Docker, pytest                      |
-| **V2**  | AWS deployment & availability      | AWS VPC, EC2, ALB, RDS, PostgreSQL                   |
-| **V3**  | Infrastructure & DevOps automation | Terraform, ECR, GitHub Actions, CloudWatch, SNS, IAM |
+| Version | Focus                              | Main Technologies                               |
+| ------- | ---------------------------------- | ----------------------------------------------- |
+| **V1**  | Application & containerization     | FastAPI, SQLite, Docker, pytest                 |
+| **V2**  | AWS deployment & availability      | VPC, EC2, ALB, RDS, PostgreSQL                  |
+| **V3**  | Infrastructure & DevOps automation | Terraform, ECR, GitHub Actions, CloudWatch, SNS |
 
 ### V1 — Application
 
-A locally runnable FastAPI application using SQLite and Docker.
+Started as a single-container FastAPI application using SQLite.
 
-**Focus:**
-
-* REST API development
-* Database persistence
-* Configuration
-* Logging
-* Automated testing
-* Containerization
-
-[Read the V1 documentation](docs/V1.md)
-
-### V2 — AWS Deployment
-
-The application was redesigned to run across multiple EC2 instances behind an Application Load Balancer with PostgreSQL hosted on Amazon RDS.
-
-**Focus:**
-
-* AWS networking
-* VPC and subnet design
-* Security groups
-* Load balancing
-* Database separation
-* Health checks
-
-[Read the V2 documentation](docs/V2.md)
-
-### V3 — Infrastructure & CI/CD
-
-The AWS infrastructure was converted to Terraform and application deployment was automated using GitHub Actions and Amazon ECR.
-
-**Focus:**
-
-* Infrastructure as Code
-* Docker image publishing
-* CI/CD
-* IAM
-* CloudWatch monitoring
-* SNS alerting
-* Automated deployment and health checks
-
-[Read the V3 documentation](docs/V3.md)
-
-## Technology Stack
-
-**Application**
-
-* Python
-* FastAPI
-* PostgreSQL
-* pytest
-
-**Containerization**
-
+* REST API for creating and resolving short URLs
+* SQLite persistence
+* Configuration and logging
+* Automated tests
 * Docker
 
-**AWS**
+[View V1 documentation →](docs/V1.md)
 
-* EC2
-* VPC
+### V2 — AWS
+
+The application was redesigned to support multiple application instances.
+
+* Two EC2 application instances
 * Application Load Balancer
-* RDS PostgreSQL
-* ECR
-* CloudWatch
-* SNS
-* IAM
+* PostgreSQL on RDS
+* VPC and subnet architecture
+* Security groups
+* Application health checks
 
-**Infrastructure & CI/CD**
+[View V2 documentation →](docs/V2.md)
 
-* Terraform
-* GitHub Actions
+### V3 — DevOps
 
-## Setup
+Infrastructure and deployment were automated.
 
-See the [Setup Guide](docs/SETUP.md) for instructions on:
+* Terraform-managed AWS infrastructure
+* Docker images stored in ECR
+* GitHub Actions CI/CD
+* Automated deployment to EC2
+* CloudWatch monitoring and alarms
+* SNS email notifications
 
-* Running the application locally
-* Running the application with Docker
-* Running tests
-* Configuring environment variables
-* Deploying the AWS infrastructure
-* Configuring CI/CD
-* Destroying the AWS infrastructure
+[View V3 documentation →](docs/V3.md)
+
+---
+
+## Tech Stack
+
+**Backend:** Python, FastAPI, PostgreSQL
+**Cloud:** AWS EC2, ALB, RDS, ECR, VPC
+**Infrastructure:** Terraform
+**CI/CD:** GitHub Actions
+**Containerization:** Docker
+**Monitoring:** CloudWatch, SNS
+**Testing:** pytest
+
+---
+
+## Run Locally
+
+```bash
+uv sync
+uv run uvicorn app.main:app --reload
+```
+
+Run tests:
+
+```bash
+uv run pytest
+```
+
+Run with Docker:
+
+```bash
+docker build -t urlshortener:v1 .
+docker run --rm -p 8000:8000 --env-file .env urlshortener:v1
+```
+
+API documentation:
+
+`http://localhost:8000/docs`
+
+For the complete local and AWS setup:
+
+**[Setup Guide →](docs/SETUP.md)**
+
+---
+
+## Repository Structure
+
+```text
+URLShortener/
+├── app/                  # FastAPI application
+├── tests/                # Automated tests
+├── terraform/            # AWS infrastructure
+├── .github/workflows/    # CI/CD pipeline
+├── docs/                 # V1, V2, V3 and setup documentation
+├── Dockerfile
+├── pyproject.toml
+└── README.md
+```
+
+---
+
+## Author
+
+**Kevin Thomas**
+MSc Data Analytics · Universität Hildesheim
+
+Interested in **Cloud, DevOps, Data Engineering and Software Engineering**.
