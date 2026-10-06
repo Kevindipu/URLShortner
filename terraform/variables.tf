@@ -24,3 +24,8 @@ variable "key_name" {
   description = "EC2 key pair name"
   type        = string
 }
+
+variable "alert_email" {
+  description = "Email address that receives CloudWatch alarm notifications"
+  type        = string
+}
