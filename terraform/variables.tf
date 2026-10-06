@@ -1,8 +1,3 @@
-variable "admin_ip" {
-  description = "Public IPv4 address allowed to SSH into the application servers"
-  type        = string
-}
-
 variable "db_username" {
   description = "RDS database username"
   type        = string
