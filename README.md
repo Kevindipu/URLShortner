@@ -283,14 +283,3 @@ EC2   EC2
 ```
 
 Monitoring and deployment are handled separately through **CloudWatch/SNS** and **GitHub Actions/ECR**.
-
-## Future Improvements
-
-* HTTPS + custom domain
-* Auto Scaling
-* Rolling/blue-green deployments
-* Application-level CloudWatch logs
-* CloudWatch dashboard
-* Better secret management
-* Remote Terraform state
-
