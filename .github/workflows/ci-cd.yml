@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -40,8 +40,8 @@ jobs:
       - name: Configure SSH
         run: |
           mkdir -p "$HOME/.ssh"
-
-          printf '%s\n' "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > "$HOME/.ssh/urlshortener-key.pem"
+          printf '%s\n' "${{ secrets.EC2_SSH_PRIVATE_KEY }}" \
+            > "$HOME/.ssh/urlshortener-key.pem"
           chmod 600 "$HOME/.ssh/urlshortener-key.pem"
 
           ssh-keyscan -H 13.51.233.43 >> "$HOME/.ssh/known_hosts"
@@ -61,16 +61,68 @@ jobs:
             docker pull \
               816352410007.dkr.ecr.eu-north-1.amazonaws.com/urlshortener:latest
 
-            echo "Stopping old container..."
+            echo "Updating environment..."
+            cat > ~/urlshortener.env << 'ENVEOF'
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            LOG_FILE=/app/data/app.log
+            BASE_URL=http://urlshortener-alb-406125972.eu-north-1.elb.amazonaws.com
+            SHORT_CODE_ALPHABET=0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
+            ENVEOF
+
+            echo "Replacing container..."
             docker stop urlshortener 2>/dev/null || true
             docker rm urlshortener 2>/dev/null || true
 
-            echo "Starting new container..."
             docker run -d \
               --name urlshortener \
               --restart unless-stopped \
+              --env-file ~/urlshortener.env \
               -p 80:8000 \
               816352410007.dkr.ecr.eu-north-1.amazonaws.com/urlshortener:latest
 
-            echo "Deployment complete."
+            echo "Checking application..."
+            sleep 5
+            curl -f http://localhost/live
+
+            echo "EC2 #1 deployment successful."
+          EOF
+
+      - name: Deploy to EC2 #2
+        run: |
+          ssh -i "$HOME/.ssh/urlshortener-key.pem" ubuntu@13.60.183.169 << 'EOF'
+            set -e
+
+            echo "Logging into ECR..."
+            aws ecr get-login-password --region eu-north-1 | \
+              docker login --username AWS --password-stdin \
+              816352410007.dkr.ecr.eu-north-1.amazonaws.com
+
+            echo "Pulling latest image..."
+            docker pull \
+              816352410007.dkr.ecr.eu-north-1.amazonaws.com/urlshortener:latest
+
+            echo "Updating environment..."
+            cat > ~/urlshortener.env << 'ENVEOF'
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            LOG_FILE=/app/data/app.log
+            BASE_URL=http://urlshortener-alb-406125972.eu-north-1.elb.amazonaws.com
+            SHORT_CODE_ALPHABET=0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
+            ENVEOF
+
+            echo "Replacing container..."
+            docker stop urlshortener 2>/dev/null || true
+            docker rm urlshortener 2>/dev/null || true
+
+            docker run -d \
+              --name urlshortener \
+              --restart unless-stopped \
+              --env-file ~/urlshortener.env \
+              -p 80:8000 \
+              816352410007.dkr.ecr.eu-north-1.amazonaws.com/urlshortener:latest
+
+            echo "Checking application..."
+            sleep 5
+            curl -f http://localhost/live
+
+            echo "EC2 #2 deployment successful."
           EOF

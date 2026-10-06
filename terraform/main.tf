@@ -207,7 +207,7 @@ resource "aws_instance" "app_1" {
   ]
   iam_instance_profile        = aws_iam_instance_profile.ec2_cloudwatch.name
   associate_public_ip_address = true
-
+  user_data = file("${path.module}/user_data.sh")
   tags = {
     Name = "urlshortener-app"
   }
@@ -225,7 +225,7 @@ resource "aws_instance" "app_2" {
   ]
   iam_instance_profile        = aws_iam_instance_profile.ec2_cloudwatch.name
   associate_public_ip_address = true
-
+  user_data = file("${path.module}/user_data.sh")
   tags = {
     Name = "urlshortener-app-2"
   }
