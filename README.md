@@ -164,7 +164,10 @@ http://localhost:8000/docs
 
 For the complete local and AWS setup:
 
-[Setup Guide →](docs/SETUP.md)
+- [V1 Setup Guide →](docs/V1_SETUP.md)
+- [V2 Setup Guide →](docs/V2_SETUP.md)
+- [V3 Setup Guide →](docs/V3_SETUP.md)
+- 
 
 ---
 
