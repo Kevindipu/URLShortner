@@ -1,285 +1,153 @@
-# URL Shortener - V1
+# URL Shortener
 
-A simple URL shortener built with **FastAPI, SQLite, and Docker**.
+A containerized URL shortener built with **FastAPI** and progressively deployed from a local application to an AWS-based architecture with **Terraform, CI/CD, and monitoring**.
 
-V1 focuses on building a working application with configuration, persistence, logging, testing, and containerization.
+The project was developed incrementally to demonstrate the evolution from a simple application to a distributed and automated cloud deployment.
 
-## Architecture
-
-```text
-Client
-  |
-  v
-FastAPI
-  |
-  v
-SQLite
-```
-
-## Features
-
-* Create short URLs with `POST /shorten`
-* Redirect with `GET /{code}`
-* Database health check with `GET /health`
-* SQLite persistence
-* Environment-based configuration
-* Application logging
-* Automated tests with pytest
-* Dockerized application
-
-## Run Locally
-
-```bash
-uv sync
-uv run uvicorn app.main:app --reload
-```
-
-Run tests:
-
-```bash
-uv run pytest
-```
-
-## Run with Docker
-
-Build:
-
-```bash
-docker build -t urlshortener:v1 .
-```
-
-Run:
-
-```bash
-docker run --rm -p 8000:8000 --env-file .env urlshortener:v1
-```
-
-API docs:
+## Architecture Evolution
 
 ```text
-http://localhost:8000/docs
+V1
+FastAPI → SQLite → Docker
 ```
 
-Health check:
+A simple, containerized URL shortener with local persistence, configuration, logging, and automated tests.
 
 ```text
-http://localhost:8000/health
+V2
+
+                         Internet
+                            |
+                            v
+                           ALB
+                         /     \
+                        v       v
+                     EC2 #1   EC2 #2
+                        \       /
+                         \     /
+                          v   v
+                       RDS PostgreSQL
 ```
 
-## Current Limitations
-
-V1 is designed for a **single application instance**.
-
-* SQLite database is stored inside the container
-* Multiple containers would have separate databases
-* No load balancer or high availability
-* No external database
-* No monitoring or CI/CD
-
-These limitations will drive the architecture of **V2**, where the focus will be reliability and running multiple application instances.
-
-# URL Shortener - V2
-
-A FastAPI-based URL shortener built to learn and progressively apply Docker, PostgreSQL, AWS, networking and load balancing.
-
-## V1 → V2
-
-### V1 — Basic Application
+The application was moved to AWS with multiple application instances, an Application Load Balancer, and a shared PostgreSQL database.
 
 ```text
-FastAPI → SQLite
-```
+V3
 
-* FastAPI application
-* SQLite database
-* Dockerized locally
-* Single application instance
-
-### V2 — AWS Deployment
-
-```text
-                    Internet
-                       |
-                       v
-                     ALB
-                   /     \
-                  v       v
-               EC2 #1  EC2 #2
-                  \       /
-                   \     /
-                    v   v
-                  RDS PostgreSQL
-```
-
-V2 replaces the single-instance/local setup with a distributed AWS architecture.
-
-### What changed?
-
-| V1                | V2                          |
-| ----------------- | --------------------------- |
-| SQLite            | PostgreSQL on RDS           |
-| Single instance   | Two EC2 instances           |
-| Direct access     | Application Load Balancer   |
-| Local database    | Shared database             |
-| No failover       | Health-check based failover |
-| Local environment | AWS VPC                     |
-
-## V2 Features
-
-* FastAPI + Docker
-* PostgreSQL on Amazon RDS
-* Two EC2 application instances
-* Application Load Balancer
-* ALB health checks using `/live`
-* `/ready` endpoint for database connectivity
-* Private subnets for RDS
-* Security groups controlling ALB → EC2 → RDS traffic
-* Failure recovery when one application instance becomes unavailable
-
-## Example
-
-Create a short URL:
-
-```bash
-curl -X POST http://<ALB-DNS>/shorten \
-  -H "Content-Type: application/json" \
-  -d '{"url":"https://www.google.com"}'
-```
-
-Response:
-
-```json
-{
-  "short_url": "http://<ALB-DNS>/8",
-  "code": "8"
-}
-```
-
-The generated URL redirects to the original URL through the ALB.
-
-## Future Improvements
-
-* HTTPS + custom domain
-* Terraform
-* CI/CD with GitHub Actions
-* Auto Scaling
-* CloudWatch monitoring
-
-
-# URL Shortener - V3
-
-V3 adds **Infrastructure as Code, monitoring, container registry, and automated CI/CD deployment** to the V2 AWS architecture.
-
-## V2 → V3
-
-```text
                          GitHub
                             |
                             v
                      GitHub Actions
                             |
-                       Build + Push
+                     Build + Test
                             |
                             v
                            ECR
-                            |
-                    +-------+-------+
-                    |               |
-                    v               v
-                 EC2 #1          EC2 #2
-                    \               /
-                     \             /
-                      v           v
-                         ALB
-                          |
-                          v
-                    RDS PostgreSQL
+                         /     \
+                        v       v
+                     EC2 #1   EC2 #2
+                        \       /
+                         \     /
+                          v   v
+                       RDS PostgreSQL
 
-        EC2 / ALB / RDS
-               |
-               v
-          CloudWatch
-               |
-               v
-              SNS
-               |
-               v
-             Email
+                    CloudWatch + SNS
+                         Monitoring
 ```
 
-### What changed?
+V3 adds Infrastructure as Code, container image management, automated deployment, centralized monitoring, and alerting.
 
-| V2                             | V3                        |
-| ------------------------------ | ------------------------- |
-| Manual AWS infrastructure      | Terraform                 |
-| Manual Docker image deployment | ECR + GitHub Actions      |
-| No centralized logging         | CloudWatch Logs           |
-| No alerts                      | CloudWatch + SNS          |
-| Manual application updates     | Automated EC2 deployment  |
-| Docker images built locally    | Docker images built in CI |
+## Project Versions
 
-## V3 Features
+| Version | Focus                              | Technologies                                         |
+| ------- | ---------------------------------- | ---------------------------------------------------- |
+| **V1**  | Application & containerization     | FastAPI, SQLite, Docker, pytest                      |
+| **V2**  | AWS deployment & availability      | AWS VPC, EC2, ALB, RDS, PostgreSQL                   |
+| **V3**  | Infrastructure & DevOps automation | Terraform, ECR, GitHub Actions, CloudWatch, SNS, IAM |
 
-* AWS infrastructure managed with Terraform
-* Amazon ECR for Docker images
-* GitHub Actions CI/CD pipeline
-* Automated deployment to both EC2 instances
-* CloudWatch centralized system logs
-* CloudWatch alarms for EC2, ALB and RDS
-* SNS email notifications
-* IAM roles for EC2 and CI/CD access
-* Automated `/live` health check after deployment
+### V1 — Application
 
-## CI/CD Flow
+A locally runnable FastAPI application using SQLite and Docker.
 
-```text
-git push
-   |
-   v
-GitHub Actions
-   |
-   +-- Build Docker image
-   |
-   +-- Push to ECR
-   |
-   +-- Deploy to EC2 #1
-   |
-   +-- Health check
-   |
-   +-- Deploy to EC2 #2
-   |
-   +-- Health check
-```
+**Focus:**
 
-## Infrastructure
+* REST API development
+* Database persistence
+* Configuration
+* Logging
+* Automated testing
+* Containerization
 
-Terraform manages:
+[Read the V1 documentation](docs/V1.md)
 
-* VPC and subnets
-* Route tables and Internet Gateway
+### V2 — AWS Deployment
+
+The application was redesigned to run across multiple EC2 instances behind an Application Load Balancer with PostgreSQL hosted on Amazon RDS.
+
+**Focus:**
+
+* AWS networking
+* VPC and subnet design
 * Security groups
-* EC2 instances
-* RDS PostgreSQL
+* Load balancing
+* Database separation
+* Health checks
+
+[Read the V2 documentation](docs/V2.md)
+
+### V3 — Infrastructure & CI/CD
+
+The AWS infrastructure was converted to Terraform and application deployment was automated using GitHub Actions and Amazon ECR.
+
+**Focus:**
+
+* Infrastructure as Code
+* Docker image publishing
+* CI/CD
+* IAM
+* CloudWatch monitoring
+* SNS alerting
+* Automated deployment and health checks
+
+[Read the V3 documentation](docs/V3.md)
+
+## Technology Stack
+
+**Application**
+
+* Python
+* FastAPI
+* PostgreSQL
+* pytest
+
+**Containerization**
+
+* Docker
+
+**AWS**
+
+* EC2
+* VPC
 * Application Load Balancer
-* Target groups and listeners
-* CloudWatch logging and alarms
-* SNS
+* RDS PostgreSQL
 * ECR
+* CloudWatch
+* SNS
 * IAM
 
-## Current Architecture
+**Infrastructure & CI/CD**
 
-```text
-Internet
-    |
-    v
-   ALB
-  /   \
- v     v
-EC2   EC2
- \     /
-  \   /
-   RDS
-```
+* Terraform
+* GitHub Actions
 
-Monitoring and deployment are handled separately through **CloudWatch/SNS** and **GitHub Actions/ECR**.
+## Setup
+
+See the [Setup Guide](docs/SETUP.md) for instructions on:
+
+* Running the application locally
+* Running the application with Docker
+* Running tests
+* Configuring environment variables
+* Deploying the AWS infrastructure
+* Configuring CI/CD
+* Destroying the AWS infrastructure
