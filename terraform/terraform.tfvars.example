@@ -1,0 +1,4 @@
+admin_ip    = "203.0.113.5"            # your IP from curl ifconfig.me
+db_password = "Abcd1234EfghIjkl"       # letters + digits only
+ami_id      = "ami-0123456789abcdef0"  # from the SSM command
+key_name    = "my-keypair"             # name only, no .pem
