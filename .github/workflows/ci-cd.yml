@@ -63,12 +63,12 @@ jobs:
               ${{ steps.login-ecr.outputs.registry }}/urlshortener:latest
 
             echo "Updating environment..."
-            cat > ~/urlshortener.env << 'ENVEOF'
-            DATABASE_URL=${{ secrets.DATABASE_URL }}
-            LOG_FILE=/app/data/app.log
-            BASE_URL=http://${{ vars.ALB_DNS }}
-            SHORT_CODE_ALPHABET=0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
-            ENVEOF
+            printf '%s\n' \
+              'DATABASE_URL=${{ secrets.DATABASE_URL }}' \
+              'LOG_FILE=/app/data/app.log' \
+              'BASE_URL=http://${{ vars.ALB_DNS }}' \
+              'SHORT_CODE_ALPHABET=0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' \
+              > ~/urlshortener.env
 
             echo "Replacing container..."
             docker stop urlshortener 2>/dev/null || true
@@ -103,12 +103,12 @@ jobs:
               ${{ steps.login-ecr.outputs.registry }}/urlshortener:latest
 
             echo "Updating environment..."
-            cat > ~/urlshortener.env << 'ENVEOF'
-            DATABASE_URL=${{ secrets.DATABASE_URL }}
-            LOG_FILE=/app/data/app.log
-            BASE_URL=http://${{ vars.ALB_DNS }}
-            SHORT_CODE_ALPHABET=0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
-            ENVEOF
+            printf '%s\n' \
+              'DATABASE_URL=${{ secrets.DATABASE_URL }}' \
+              'LOG_FILE=/app/data/app.log' \
+              'BASE_URL=http://${{ vars.ALB_DNS }}' \
+              'SHORT_CODE_ALPHABET=0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' \
+              > ~/urlshortener.env
 
             echo "Replacing container..."
             docker stop urlshortener 2>/dev/null || true
