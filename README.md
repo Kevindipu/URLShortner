@@ -166,3 +166,131 @@ The generated URL redirects to the original URL through the ALB.
 * CloudWatch monitoring
 
 
+# URL Shortener - V3
+
+V3 adds **Infrastructure as Code, monitoring, container registry, and automated CI/CD deployment** to the V2 AWS architecture.
+
+## V2 → V3
+
+```text
+                         GitHub
+                            |
+                            v
+                     GitHub Actions
+                            |
+                       Build + Push
+                            |
+                            v
+                           ECR
+                            |
+                    +-------+-------+
+                    |               |
+                    v               v
+                 EC2 #1          EC2 #2
+                    \               /
+                     \             /
+                      v           v
+                         ALB
+                          |
+                          v
+                    RDS PostgreSQL
+
+        EC2 / ALB / RDS
+               |
+               v
+          CloudWatch
+               |
+               v
+              SNS
+               |
+               v
+             Email
+```
+
+### What changed?
+
+| V2                             | V3                        |
+| ------------------------------ | ------------------------- |
+| Manual AWS infrastructure      | Terraform                 |
+| Manual Docker image deployment | ECR + GitHub Actions      |
+| No centralized logging         | CloudWatch Logs           |
+| No alerts                      | CloudWatch + SNS          |
+| Manual application updates     | Automated EC2 deployment  |
+| Docker images built locally    | Docker images built in CI |
+
+## V3 Features
+
+* AWS infrastructure managed with Terraform
+* Amazon ECR for Docker images
+* GitHub Actions CI/CD pipeline
+* Automated deployment to both EC2 instances
+* CloudWatch centralized system logs
+* CloudWatch alarms for EC2, ALB and RDS
+* SNS email notifications
+* IAM roles for EC2 and CI/CD access
+* Automated `/live` health check after deployment
+
+## CI/CD Flow
+
+```text
+git push
+   |
+   v
+GitHub Actions
+   |
+   +-- Build Docker image
+   |
+   +-- Push to ECR
+   |
+   +-- Deploy to EC2 #1
+   |
+   +-- Health check
+   |
+   +-- Deploy to EC2 #2
+   |
+   +-- Health check
+```
+
+## Infrastructure
+
+Terraform manages:
+
+* VPC and subnets
+* Route tables and Internet Gateway
+* Security groups
+* EC2 instances
+* RDS PostgreSQL
+* Application Load Balancer
+* Target groups and listeners
+* CloudWatch logging and alarms
+* SNS
+* ECR
+* IAM
+
+## Current Architecture
+
+```text
+Internet
+    |
+    v
+   ALB
+  /   \
+ v     v
+EC2   EC2
+ \     /
+  \   /
+   RDS
+```
+
+Monitoring and deployment are handled separately through **CloudWatch/SNS** and **GitHub Actions/ECR**.
+
+## Future Improvements
+
+* HTTPS + custom domain
+* Auto Scaling
+* Rolling/blue-green deployments
+* Application-level CloudWatch logs
+* CloudWatch dashboard
+* Better secret management
+* Remote Terraform state
+
