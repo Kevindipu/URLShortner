@@ -34,7 +34,7 @@ resource "aws_iam_instance_profile" "ec2_cloudwatch" {
 
 resource "aws_iam_user" "github_actions" {
   name = "urlshortener-github-actions"
-
+  force_destroy = true
   tags = {
     Name = "urlshortener-github-actions"
   }
