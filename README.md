@@ -2,8 +2,6 @@
 
 A URL shortener built with **FastAPI and Docker**, progressively developed from a local application into an AWS-based deployment with **Terraform, CI/CD, and monitoring**.
 
-**Current version: V3**
-
 ![Python](https://img.shields.io/badge/Python-3776AB?logo=python\&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi\&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker\&logoColor=white)
