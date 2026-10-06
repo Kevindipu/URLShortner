@@ -36,3 +36,16 @@ jobs:
         run: |
           docker push \
             816352410007.dkr.ecr.eu-north-1.amazonaws.com/urlshortener:latest
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/urlshortener-key.pem
+          chmod 600 ~/.ssh/urlshortener-key.pem
+          ssh-keyscan -H 13.51.233.43 >> ~/.ssh/known_hosts
+          ssh-keyscan -H 13.60.183.169 >> ~/.ssh/known_hosts
+
+      - name: Test SSH to EC2 instances
+        run: |
+          ssh -i ~/.ssh/urlshortener-key.pem ubuntu@13.51.233.43 "echo EC2-1-SSH-OK"
+          ssh -i ~/.ssh/urlshortener-key.pem ubuntu@13.60.183.169 "echo EC2-2-SSH-OK"
