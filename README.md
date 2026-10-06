@@ -1,6 +1,8 @@
 # URL Shortener
 
-A URL shortener built with **FastAPI and Docker**, progressively deployed from a local application to an AWS-based architecture with **Terraform, CI/CD, and monitoring**.
+A URL shortener built with **FastAPI and Docker**, progressively developed from a local application into an AWS-based deployment with **Terraform, CI/CD, and monitoring**.
+
+**Current version: V3**
 
 ![Python](https://img.shields.io/badge/Python-3776AB?logo=python\&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi\&logoColor=white)
@@ -13,29 +15,59 @@ A URL shortener built with **FastAPI and Docker**, progressively deployed from a
 
 ## Architecture
 
+### Runtime
+
 ```text
-                         Internet
-                            |
-                            v
-                           ALB
-                         /     \
-                        v       v
-                     EC2 #1   EC2 #2
-                        \       /
-                         \     /
-                          v   v
-                     RDS PostgreSQL
-
-        GitHub → GitHub Actions → ECR → EC2
-
-              EC2 / ALB / RDS
-                       |
-                   CloudWatch
-                       |
-                      SNS
+                    Internet
+                       │
+                       ▼
+                  ┌─────────┐
+                  │   ALB   │
+                  └────┬────┘
+                       │
+                 ┌─────┴─────┐
+                 ▼           ▼
+            ┌─────────┐ ┌─────────┐
+            │  EC2 #1 │ │  EC2 #2 │
+            │ FastAPI │ │ FastAPI │
+            └────┬────┘ └────┬────┘
+                 │           │
+                 └─────┬─────┘
+                       ▼
+                ┌──────────────┐
+                │ RDS PostgreSQL│
+                └──────────────┘
 ```
 
-Terraform manages the AWS infrastructure, while GitHub Actions builds and deploys the Docker image through Amazon ECR.
+### Deployment
+
+```text
+GitHub
+   │
+   ▼
+GitHub Actions
+   │
+   ├── Test
+   ├── Build
+   └── Push
+        │
+        ▼
+       ECR
+        │
+        ├────────► EC2 #1
+        │
+        └────────► EC2 #2
+```
+
+### Monitoring
+
+```text
+EC2 ───┐
+ALB ───┼──► CloudWatch ──► SNS ──► Email
+RDS ───┘
+```
+
+Terraform manages the AWS infrastructure, while GitHub Actions handles testing, image builds, and deployment.
 
 ---
 
@@ -101,8 +133,15 @@ Infrastructure and deployment were automated.
 
 ## Run Locally
 
+Install dependencies:
+
 ```bash
 uv sync
+```
+
+Start the application:
+
+```bash
 uv run uvicorn app.main:app --reload
 ```
 
@@ -121,11 +160,13 @@ docker run --rm -p 8000:8000 --env-file .env urlshortener:v1
 
 API documentation:
 
-`http://localhost:8000/docs`
+```text
+http://localhost:8000/docs
+```
 
 For the complete local and AWS setup:
 
-**[Setup Guide →](docs/SETUP.md)**
+[Setup Guide →](docs/SETUP.md)
 
 ---
 
@@ -137,11 +178,20 @@ URLShortener/
 ├── tests/                # Automated tests
 ├── terraform/            # AWS infrastructure
 ├── .github/workflows/    # CI/CD pipeline
-├── docs/                 # V1, V2, V3 and setup documentation
+├── docs/                 # Project documentation
 ├── Dockerfile
 ├── pyproject.toml
 └── README.md
 ```
+
+---
+
+## Documentation
+
+* [V1 — Application & Docker](docs/V1.md)
+* [V2 — AWS Deployment](docs/V2.md)
+* [V3 — Infrastructure & DevOps](docs/V3.md)
+* [Setup Guide](docs/SETUP.md)
 
 ---
 
