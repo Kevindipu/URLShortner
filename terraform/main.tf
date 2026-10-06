@@ -136,14 +136,6 @@ resource "aws_security_group" "app" {
     security_groups = [aws_security_group.alb.id]
   }
 
-  ingress {
-    description = "SSH from my IP"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   egress {
     description = "Allow all outbound traffic"
     from_port   = 0
@@ -207,7 +199,7 @@ resource "aws_instance" "app_1" {
   ]
   iam_instance_profile        = aws_iam_instance_profile.ec2_cloudwatch.name
   associate_public_ip_address = true
-  user_data = file("${path.module}/user_data.sh")
+  user_data                   = file("${path.module}/user_data.sh")
   tags = {
     Name = "urlshortener-app"
   }
@@ -225,7 +217,7 @@ resource "aws_instance" "app_2" {
   ]
   iam_instance_profile        = aws_iam_instance_profile.ec2_cloudwatch.name
   associate_public_ip_address = true
-  user_data = file("${path.module}/user_data.sh")
+  user_data                   = file("${path.module}/user_data.sh")
   tags = {
     Name = "urlshortener-app-2"
   }
