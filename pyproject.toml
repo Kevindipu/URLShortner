@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "urlshortner"
+name = "URLshortener"
 version = "0.1.0"
-description = "Add your description here"
+description = "A FastAPI-based URL shortening service backed by PostgreSQL"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
