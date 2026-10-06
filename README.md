@@ -115,19 +115,17 @@ Infrastructure and deployment were automated.
 
 [View V3 documentation →](docs/V3.md)
 
----
-
 ## Tech Stack
 
-**Backend:** Python, FastAPI, PostgreSQL
-**Cloud:** AWS EC2, ALB, RDS, ECR, VPC
-**Infrastructure:** Terraform
-**CI/CD:** GitHub Actions
-**Containerization:** Docker
-**Monitoring:** CloudWatch, SNS
-**Testing:** pytest
-
----
+| Category | Technologies |
+|---|---|
+| **Backend** | Python, FastAPI, PostgreSQL |
+| **Cloud** | AWS EC2, ALB, RDS, ECR, VPC |
+| **Infrastructure** | Terraform |
+| **CI/CD** | GitHub Actions |
+| **Containers** | Docker |
+| **Monitoring** | CloudWatch, SNS |
+| **Testing** | pytest |
 
 ## Run Locally
 
@@ -167,7 +165,6 @@ For the complete local and AWS setup:
 - [V1 Setup Guide →](docs/V1_SETUP.md)
 - [V2 Setup Guide →](docs/V2_SETUP.md)
 - [V3 Setup Guide →](docs/V3_SETUP.md)
-- 
 
 ---
 
@@ -198,7 +195,5 @@ URLShortener/
 
 ## Author
 
-**Kevin Thomas**
-MSc Data Analytics · Universität Hildesheim
-
-Interested in **Cloud, DevOps, Data Engineering and Software Engineering**.
+**Kevin**  
+[GitHub](https://github.com/Kevindipu) · [LinkedIn](https://www.linkedin.com/in/kevin-thomas-dipu-a923121b7/)
