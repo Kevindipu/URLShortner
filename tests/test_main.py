@@ -1,12 +1,13 @@
 from fastapi.testclient import TestClient
+
 from app.main import app
 
 
 client = TestClient(app)
 
 
-def test_health():
-    response = client.get("/health")
+def test_liveness():
+    response = client.get("/live")
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
@@ -31,6 +32,8 @@ def test_redirect():
         "/shorten",
         json={"url": "https://example.com"},
     )
+
+    assert response.status_code == 200
 
     code = response.json()["code"]
 
