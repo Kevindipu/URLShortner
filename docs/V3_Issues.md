@@ -297,12 +297,6 @@ Infrastructure changes should not require removing application tests that are st
 
 ---
 
-**Lesson**
-
-A technically impressive architecture should still be described honestly according to its actual operational characteristics.
-
----
-
 ## V3 Key Lessons
 
 1. Terraform state must be managed deliberately.
