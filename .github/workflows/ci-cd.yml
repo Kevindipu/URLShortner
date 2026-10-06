@@ -21,6 +21,7 @@ jobs:
           aws-region: eu-north-1
 
       - name: Login to Amazon ECR
+        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build Docker image
@@ -30,12 +31,12 @@ jobs:
       - name: Tag Docker image
         run: |
           docker tag urlshortener:latest \
-            816352410007.dkr.ecr.eu-north-1.amazonaws.com/urlshortener:latest
+            ${{ steps.login-ecr.outputs.registry }}/urlshortener:latest
 
       - name: Push Docker image
         run: |
           docker push \
-            816352410007.dkr.ecr.eu-north-1.amazonaws.com/urlshortener:latest
+            ${{ steps.login-ecr.outputs.registry }}/urlshortener:latest
 
       - name: Configure SSH
         run: |
@@ -44,28 +45,28 @@ jobs:
             > "$HOME/.ssh/urlshortener-key.pem"
           chmod 600 "$HOME/.ssh/urlshortener-key.pem"
 
-          ssh-keyscan -H 13.51.233.43 >> "$HOME/.ssh/known_hosts"
-          ssh-keyscan -H 13.60.183.169 >> "$HOME/.ssh/known_hosts"
+          ssh-keyscan -H ${{ vars.EC2_1_IP }} >> "$HOME/.ssh/known_hosts"
+          ssh-keyscan -H ${{ vars.EC2_2_IP }} >> "$HOME/.ssh/known_hosts"
 
       - name: Deploy to EC2 #1
         run: |
-          ssh -i "$HOME/.ssh/urlshortener-key.pem" ubuntu@13.51.233.43 << 'EOF'
+          ssh -i "$HOME/.ssh/urlshortener-key.pem" ubuntu@${{ vars.EC2_1_IP }} << 'EOF'
             set -e
 
             echo "Logging into ECR..."
             aws ecr get-login-password --region eu-north-1 | \
               docker login --username AWS --password-stdin \
-              816352410007.dkr.ecr.eu-north-1.amazonaws.com
+              ${{ steps.login-ecr.outputs.registry }}
 
             echo "Pulling latest image..."
             docker pull \
-              816352410007.dkr.ecr.eu-north-1.amazonaws.com/urlshortener:latest
+              ${{ steps.login-ecr.outputs.registry }}/urlshortener:latest
 
             echo "Updating environment..."
             cat > ~/urlshortener.env << 'ENVEOF'
             DATABASE_URL=${{ secrets.DATABASE_URL }}
             LOG_FILE=/app/data/app.log
-            BASE_URL=http://urlshortener-alb-406125972.eu-north-1.elb.amazonaws.com
+            BASE_URL=http://${{ vars.ALB_DNS }}
             SHORT_CODE_ALPHABET=0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
             ENVEOF
 
@@ -78,7 +79,7 @@ jobs:
               --restart unless-stopped \
               --env-file ~/urlshortener.env \
               -p 80:8000 \
-              816352410007.dkr.ecr.eu-north-1.amazonaws.com/urlshortener:latest
+              ${{ steps.login-ecr.outputs.registry }}/urlshortener:latest
 
             echo "Checking application..."
             sleep 5
@@ -89,23 +90,23 @@ jobs:
 
       - name: Deploy to EC2 #2
         run: |
-          ssh -i "$HOME/.ssh/urlshortener-key.pem" ubuntu@13.60.183.169 << 'EOF'
+          ssh -i "$HOME/.ssh/urlshortener-key.pem" ubuntu@${{ vars.EC2_2_IP }} << 'EOF'
             set -e
 
             echo "Logging into ECR..."
             aws ecr get-login-password --region eu-north-1 | \
               docker login --username AWS --password-stdin \
-              816352410007.dkr.ecr.eu-north-1.amazonaws.com
+              ${{ steps.login-ecr.outputs.registry }}
 
             echo "Pulling latest image..."
             docker pull \
-              816352410007.dkr.ecr.eu-north-1.amazonaws.com/urlshortener:latest
+              ${{ steps.login-ecr.outputs.registry }}/urlshortener:latest
 
             echo "Updating environment..."
             cat > ~/urlshortener.env << 'ENVEOF'
             DATABASE_URL=${{ secrets.DATABASE_URL }}
             LOG_FILE=/app/data/app.log
-            BASE_URL=http://urlshortener-alb-406125972.eu-north-1.elb.amazonaws.com
+            BASE_URL=http://${{ vars.ALB_DNS }}
             SHORT_CODE_ALPHABET=0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
             ENVEOF
 
@@ -118,7 +119,7 @@ jobs:
               --restart unless-stopped \
               --env-file ~/urlshortener.env \
               -p 80:8000 \
-              816352410007.dkr.ecr.eu-north-1.amazonaws.com/urlshortener:latest
+              ${{ steps.login-ecr.outputs.registry }}/urlshortener:latest
 
             echo "Checking application..."
             sleep 5
